@@ -97,7 +97,7 @@ class BaseSubmititLauncher(Launcher):
         params = self.params
         # build executor
         init_params = {"folder": self.params["submitit_folder"]}
-        specific_init_keys = {"max_num_timeout"}
+        specific_init_keys = {"max_num_timeout", "python"}
 
         init_params.update(
             **{
@@ -140,7 +140,7 @@ class BaseSubmititLauncher(Launcher):
                     idx,
                     f"job_id_for_{idx}",
                     Singleton.get_state(),
-                    list(sweep_keys),
+                    [] if sweep_keys is None else list(sweep_keys),
                 )
             )
 

@@ -109,12 +109,14 @@ class BasicSweeper(Sweeper):
     ) -> List[List[List[str]]]:
         lists = []
         final_overrides = OrderedDict()
+        sweep_keys = set()
         for override in overrides:
             if override.is_sweep_override():
                 if override.is_discrete_sweep():
                     key = override.get_key_element()
                     sweep = [f"{key}={val}" for val in override.sweep_string_iterator()]
                     final_overrides[key] = sweep
+                    sweep_keys.add(override.key_or_group)
                 else:
                     assert override.value_type is not None
                     raise HydraException(
@@ -131,12 +133,12 @@ class BasicSweeper(Sweeper):
         all_batches = [list(x) for x in itertools.product(*lists)]
         assert max_batch_size is None or max_batch_size > 0
         if max_batch_size is None:
-            return [all_batches]
+            return [all_batches], sweep_keys
         else:
             chunks_iter = BasicSweeper.split_overrides_to_chunks(
                 all_batches, max_batch_size
             )
-            return [x for x in chunks_iter]
+            return [x for x in chunks_iter], sweep_keys
 
     def _parse_config(self) -> List[str]:
         params_conf = []
@@ -155,7 +157,7 @@ class BasicSweeper(Sweeper):
         parser = OverridesParser.create(config_loader=self.hydra_context.config_loader)
         overrides = parser.parse_overrides(params_conf)
 
-        self.overrides = self.split_arguments(overrides, self.max_batch_size)
+        self.overrides, sweep_keys = self.split_arguments(overrides, self.max_batch_size)
         returns: List[Sequence[JobReturn]] = []
 
         # Save sweep run config in top level sweep working directory
@@ -174,7 +176,7 @@ class BasicSweeper(Sweeper):
             log.debug(
                 f"Validated configs of {len(batch)} jobs in {elapsed:0.2f} seconds, {len(batch)/elapsed:.2f} / second)"
             )
-            results = self.launcher.launch(batch, initial_job_idx=initial_job_idx)
+            results = self.launcher.launch(batch, initial_job_idx=initial_job_idx, sweep_keys=sweep_keys)
 
             for r in results:
                 # access the result to trigger an exception in case the job failed.

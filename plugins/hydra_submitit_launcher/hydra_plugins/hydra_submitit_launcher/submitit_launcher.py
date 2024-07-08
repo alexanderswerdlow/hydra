@@ -48,6 +48,7 @@ class BaseSubmititLauncher(Launcher):
         job_num: int,
         job_id: str,
         singleton_state: Dict[type, Singleton],
+        sweep_keys: Optional[List[str]] = None,
     ) -> JobReturn:
         # lazy import to ensure plugin discovery remains fast
         import submitit
@@ -66,6 +67,7 @@ class BaseSubmititLauncher(Launcher):
             # Populate new job variables
             job.id = submitit.JobEnvironment().job_id  # type: ignore
             sweep_config.hydra.job.num = job_num
+            sweep_config.hydra.job.sweep_keys = sweep_keys
 
         return run_job(
             hydra_context=self.hydra_context,
@@ -83,7 +85,7 @@ class BaseSubmititLauncher(Launcher):
         return submitit.helpers.DelayedSubmission(self, *args, **kwargs)
 
     def launch(
-        self, job_overrides: Sequence[Sequence[str]], initial_job_idx: int
+        self, job_overrides: Sequence[Sequence[str]], initial_job_idx: int, sweep_keys=None
     ) -> Sequence[JobReturn]:
         # lazy import to ensure plugin discovery remains fast
         import submitit
@@ -138,6 +140,7 @@ class BaseSubmititLauncher(Launcher):
                     idx,
                     f"job_id_for_{idx}",
                     Singleton.get_state(),
+                    list(sweep_keys),
                 )
             )
 

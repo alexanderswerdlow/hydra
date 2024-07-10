@@ -14,6 +14,31 @@ from .config import BaseQueueConf
 
 log = logging.getLogger(__name__)
 
+def tail_log_file(log_file_path, glob_str=None):
+    import subprocess
+    import time
+    max_retries = 60
+    retry_interval = 4
+    for _ in range(max_retries):
+        try:
+            if (glob_str is None and Path(log_file_path).exists()) or len(list(Path(log_file_path).rglob(glob_str))) > 0:
+                try:
+                    if glob_str is None:
+                        print(f"Tailing {log_file_path}")
+                        proc = subprocess.Popen(['tail', '-f', "-n", "+1", f"{log_file_path}"], stdout=subprocess.PIPE)
+                    else:
+                        print(['tail', '-f', "-n", "+1", f"{log_file_path}/{glob_str}"])
+                        proc = subprocess.Popen(['sh', '-c', f'tail -f -n +1 {log_file_path}/{glob_str}'], stdout=subprocess.PIPE)
+                    for line in iter(proc.stdout.readline, b''):
+                        print(line.decode('utf-8'), end='')
+                except:
+                    proc.terminate()
+        except:
+            print(f"Tried to glob: {log_file_path}, {glob_str}")
+        finally:
+            time.sleep(retry_interval)
+
+    print(f"File not found: {log_file_path} after {max_retries * retry_interval} seconds...")
 
 class BaseSubmititLauncher(Launcher):
     _EXECUTOR = "abstract"
@@ -145,6 +170,12 @@ class BaseSubmititLauncher(Launcher):
             )
 
         jobs = executor.map_array(self, *zip(*job_params))
+        if len(jobs) == 1:
+            print(f"Log file: {jobs[0].paths.stdout}")
+            tail_log_file(jobs[0].paths.stdout)
+        else:
+            tail_log_file(str(Path(jobs[0].paths.stdout).parent.parent), "**/*.out")
+
         return [j.results()[0] for j in jobs]
 
 

@@ -122,7 +122,7 @@ class BaseSubmititLauncher(Launcher):
         params = self.params
         # build executor
         init_params = {"folder": self.params["submitit_folder"]}
-        specific_init_keys = {"max_num_timeout", "python"}
+        specific_init_keys = {"max_num_timeout", "python", "python_suffix"}
 
         init_params.update(
             **{
@@ -170,12 +170,7 @@ class BaseSubmititLauncher(Launcher):
             )
 
         jobs = executor.map_array(self, *zip(*job_params))
-        if len(jobs) == 1:
-            print(f"Log file: {jobs[0].paths.stdout}")
-            tail_log_file(jobs[0].paths.stdout)
-        else:
-            tail_log_file(str(Path(jobs[0].paths.stdout).parent.parent), "**/*.out")
-
+        tail_log_file(str(Path(jobs[0].paths.stdout).parent.parent), "**/*.out")
         return [j.results()[0] for j in jobs]
 
 

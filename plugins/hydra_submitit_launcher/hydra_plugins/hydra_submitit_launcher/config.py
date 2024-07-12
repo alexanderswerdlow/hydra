@@ -11,6 +11,7 @@ class BaseQueueConf:
 
     submitit_folder: str = "${hydra.sweep.dir}/.submitit/%j"
     python: Optional[str] = None
+    python_suffix: Optional[str] = None
 
     # maximum time for the job in minutes
     timeout_min: int = 60
@@ -67,7 +68,6 @@ class SlurmQueueConf(BaseQueueConf):
     # check the following for more info on slurm_max_num_timeout
     # https://github.com/facebookincubator/submitit/blob/main/docs/checkpointing.md
     max_num_timeout: int = 0
-    python: Optional[str] = None
     # Useful to add parameters which are not currently available in the plugin.
     # Eg: {"mail-user": "blublu@fb.com", "mail-type": "BEGIN"}
     additional_parameters: Dict[str, Any] = field(default_factory=dict)
@@ -77,6 +77,8 @@ class SlurmQueueConf(BaseQueueConf):
     setup: Optional[List[str]] = None
     # Any additional arguments that should be passed to srun
     srun_args: Optional[List[str]] = None
+    signal: Optional[str] = None
+    post_srun_commands: Optional[List[str]] = None
 
 
 @dataclass

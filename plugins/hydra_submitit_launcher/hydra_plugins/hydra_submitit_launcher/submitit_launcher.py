@@ -170,7 +170,7 @@ class BaseSubmititLauncher(Launcher):
             )
 
         jobs = executor.map_array(self, *zip(*job_params))
-        tail_log_file(str(Path(jobs[0].paths.stdout).parent.parent), "**/*.out")
+        # tail_log_file(str(Path(jobs[0].paths.stdout).parent.parent), "**/*.out")
         return [j.results()[0] for j in jobs]
 
 
